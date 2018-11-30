@@ -1,4 +1,3 @@
-
 <template>
   <div class="row animated fadeIn">
     <div class="col-2 col-md-3 col-lg-5"></div>
@@ -27,12 +26,15 @@
             required
           >
         </div>
-        <small v-if="error" class="form-text text-muted">{{error}}</small>
+        <small
+          v-if="error"
+          class="form-text text-muted"
+        >{{error}}</small>
         <button
           type="submit"
           class="btn btn-outline-info"
           v-on:click="handleSubmit"
-        >Login</button>
+        >{{uppercaseRouteName}}</button>
 
       </form>
     </div>
@@ -42,6 +44,7 @@
 
 <script>
 export default {
+  props: ['formType'],
   data() {
     return {
       username: "",
@@ -52,33 +55,43 @@ export default {
   methods: {
     handleSubmit(e) {
       e.preventDefault();
-      this.$http
-        .post("/login", {
-          username: this.username,
-          password: this.password
-        })
-        .then(response => {
-          if (response.data.error) {
-            this.error = response.data.error;
-            return;
-          }
-
-          this.error = "";
-          localStorage.setItem("user", response.data.username);
-          localStorage.setItem("jwt", response.data.token);
-
-          if (localStorage.getItem("jwt") != null) {
-            this.$emit("loggedIn");
-            if (this.$route.params.nextUrl != null) {
-              this.$router.push(this.$route.params.nextUrl);
-            } else {
-              this.$router.push("/example");
+      if (this.password.length > 0) {
+        this.$http
+          .post(`/${this.formType}`, {
+            username: this.username,
+            password: this.password
+          })
+          .then(response => {
+            if (response.data.error) {
+              this.error = response.data.error;
+              return;
             }
-          }
-        })
-        .catch(function(error) {
-          console.error(error.response);
-        });
+
+            this.error = "";
+            localStorage.setItem("user", response.data.username);
+            localStorage.setItem("outpostJwt", response.data.token);
+
+            if (localStorage.getItem("outpostJwt") != null) {
+              this.$emit("loggedIn");
+              if (this.$route.params.nextUrl != null) {
+                this.$router.push(this.$route.params.nextUrl);
+              } else {
+                this.$router.push("/intro");
+              }
+            }
+          })
+          .catch(function(error) {
+            console.error(error.response);
+          });
+      } else {
+        this.error = "Password cannot be empty";
+        return;
+      }
+    }
+  },
+  computed: {
+    uppercaseRouteName() {
+      return this.formType.charAt(0).toUpperCase() + this.formType.slice(1)
     }
   }
 };

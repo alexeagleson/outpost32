@@ -6,7 +6,7 @@
 export default {
   mounted() {
     localStorage.removeItem("user");
-    localStorage.removeItem("jwt");
+    localStorage.removeItem("outpostJwt");
     this.$router.push("/");
   }
 };

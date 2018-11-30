@@ -1,10 +1,9 @@
 <template>
   <div id="app">
     <h5 style="text-align: center;" id="nav">
-      <router-link v-if="!loggedIn()" to="/">Login</router-link>
-      <router-link v-if="!loggedIn()" to="/register"> | Register</router-link>
-      <router-link v-if="loggedIn()" to="/example">Example</router-link>
-      <router-link v-if="loggedIn()" to="/outpost">| Outpost</router-link>
+      <router-link v-bind:class="{ bold: routeName('login') }" v-if="!loggedIn()" to="/">Login</router-link>
+      <router-link v-bind:class="{ bold: routeName('register') }" v-if="!loggedIn()" to="/register"> | Register</router-link>
+      <router-link v-bind:class="{ bold: routeName('outpost') }" v-if="loggedIn()" to="/outpost">Outpost</router-link>
       <router-link v-if="loggedIn()" to="/logout"> | Logout</router-link>
     </h5>
     <router-view/>
@@ -19,7 +18,10 @@ export default {
   },
   methods: {
     loggedIn() {
-      return !!localStorage.getItem("jwt");
+      return !!localStorage.getItem("outpostJwt");
+    },
+    routeName(name) {
+      return this.$route.name === name;
     }
   },
 };
@@ -28,5 +30,9 @@ export default {
 <style scoped>
 #nav {
   padding-top: 50px;
+}
+
+.bold {
+  font-weight: bold;
 }
 </style>

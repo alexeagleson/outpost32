@@ -6,6 +6,7 @@ const path = require("path");
 const uniqid = require("uniqid");
 const mysql = require("mysql");
 const history = require("connect-history-api-fallback");
+require("dotenv").config();
 
 // CORS middleware
 const allowCrossDomain = function(req, res, next) {
@@ -16,7 +17,8 @@ const allowCrossDomain = function(req, res, next) {
 };
 
 const distPath = path.join(__dirname, "..", "dist");
-const jwtSecret = "sadsaf7dsasd292mde963329";
+const port = process.env.PORT;
+const secret = process.env.JWT_SECRET;
 const saltRounds = 10;
 
 class SQLHandler {
@@ -112,7 +114,7 @@ class App {
               .then(compareResult => {
                 if (compareResult) {
                   const currentUser = new User(passwordResult[0].username);
-                  currentUser.generateAuthToken(jwtSecret);
+                  currentUser.generateAuthToken(secret);
                   res
                     .header("x-auth", currentUser.token)
                     .send({ username: passwordResult[0].username, token: currentUser.token });
@@ -151,7 +153,7 @@ class App {
                 [uniqid(), req.body.username, hash],
                 () => {
                   const currentUser = new User(req.body.username);
-                  currentUser.generateAuthToken(jwtSecret);
+                  currentUser.generateAuthToken(secret);
                   res
                     .header("x-auth", currentUser.token)
                     .send({ username: req.body.username, token: currentUser.token });
@@ -176,9 +178,7 @@ class App {
   }
 }
 
-require("dotenv").config();
-
-const localDatabaseConfig = {
+const localDB = {
   connectionLimit: 10,
   host: process.env.DB_HOST_LOCAL,
   port: process.env.DB_PORT_LOCAL,
@@ -187,28 +187,37 @@ const localDatabaseConfig = {
   database: process.env.DB_NAME_LOCAL
 };
 
-// const databaseConfig = {
-//   connectionLimit: 10,
-//   host: process.env.DB_HOST,
-//   user: process.env.DB_USER,
-//   password: process.env.DB_PASS,
-//   database: process.env.DB_NAME
-// };
+const remoteDB = {
+  connectionLimit: 10,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
+};
 
-const appWithDB = new App(localDatabaseConfig);
+const dbLocal = true;
+const dbConfig = dbLocal ? localDB : remoteDB;
+
+const appWithDB = new App(dbConfig);
 const app = appWithDB.express;
 
 app.use(allowCrossDomain);
 app.use(history());
 
-const port = process.env.PORT;
 
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+// ROT JS
+
+const world = {
+  width: 60,
+  height: 60,
+  tileMap: {},
+};
+
+let players = [];
 
 const ROT = require('rot-js');
 
-const map = new ROT.Map.Cellular(10, 8, {connected: true});
+const map = new ROT.Map.Cellular(world.width, world.height, {connected: true});
 
 // Cells have a 1/2 probability
 map.randomize(0.5);
@@ -218,33 +227,61 @@ for (let i = 0; i < 5; i++) {
 }
 map.connect(null, 1);
 
-const tileMap = [];
-
-for (let i = 0; i < 10; i++) {
-  for (let j = 0; j < 8; j ++) {
+for (let i = 0; i < world.width; i++) {
+  for (let j = 0; j < world.height; j++) {
     const key = i + ',' + j;
-    tileMap[key] = {};
     if (map._map[i][j]) {
-      tileMap[key].char = ".";
+      world.tileMap[key] = ".";
     } else {
-      tileMap[key].char = "#";
+      world.tileMap[key] = "#";
     }
   }
 }
 
-console.log(tileMap);
 
+
+
+
+
+
+
+
+
+
+
+
+
+// SOCKET IO
+
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 
 io.on('connection', (socket) => {
-  console.log('a user connected');
-  
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
+  console.log('a user connected: ' + socket.id);
+  players.push({
+    name: socket.handshake.query.user,
+    x: 20,
+    y: 20,
+    id: socket.id,
   });
-
+  console.log(players);
+  
   socket.on('chat message', (msg) => {
     io.emit('chat message', msg);
+    io.emit('map', world);
     // io.emit('some event', { for: 'everyone' });
+  });
+
+  socket.on('move', (moveData) => {
+    const updatedPlayer = players.find(singlePlayer => singlePlayer.id === socket.id);
+    updatedPlayer.x += moveData.x;
+    updatedPlayer.y += moveData.y;
+    io.emit('moveOk', players);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('user disconnected: ' + socket.id);
+    players = players.filter((singlePlayer) => singlePlayer.id !== socket.id);
   });
 });
 
