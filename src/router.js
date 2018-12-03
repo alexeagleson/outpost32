@@ -73,7 +73,7 @@ router.beforeEach((to, from, next) => {
     if (localStorage.getItem("outpostJwt") == null) {
       next();
     } else {
-      next({ name: "example" });
+      next({ name: "intro" });
     }
   } else {
     next();

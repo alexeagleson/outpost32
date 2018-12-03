@@ -208,8 +208,8 @@ app.use(history());
 // ROT JS
 
 const world = {
-  width: 60,
-  height: 60,
+  width: 50,
+  height: 30,
   tileMap: {},
 };
 
@@ -240,17 +240,6 @@ for (let i = 0; i < world.width; i++) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 // SOCKET IO
 
 const http = require('http').Server(app);
@@ -266,10 +255,8 @@ io.on('connection', (socket) => {
   });
   console.log(players);
   
-  socket.on('chat message', (msg) => {
-    io.emit('chat message', msg);
+  socket.on('map', () => {
     io.emit('map', world);
-    // io.emit('some event', { for: 'everyone' });
   });
 
   socket.on('move', (moveData) => {

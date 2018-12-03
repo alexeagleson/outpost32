@@ -1,17 +1,16 @@
 <template>
-  <div class="row animated fadeIn">
-    <div class="col-2 col-md-3 col-lg-5"></div>
-    <div class="col-8 col-md-6 col-lg-2">
-      <input
-        id="plop"
-        type="text"
-      >
-      <button v-on:click="submitInput()">CHAT</button>
-      <div id="rot-container"></div>
-      <div id="chat"></div>
+  <div>
+    <div class="row animated fadeIn">
+      <div class="col-2 col-md-3 col-lg-5"></div>
+      <div class="col-8 col-md-6 col-lg-2">
+        <button v-on:click="moveUp()">UP</button>
+        <button v-on:click="moveDown()">DOWN</button>
+        <button v-on:click="moveLeft()">LEFT</button>
+        <button v-on:click="moveRight()">RIGHT</button>
+      </div>
+      <div class="col-2 col-md-3 col-lg-5"></div>
     </div>
-    <div class="col-2 col-md-3 col-lg-5"></div>
-
+    <div class="row" id="rot-container"></div>
   </div>
 </template>
 
@@ -42,23 +41,23 @@ export default {
     };
   },
   methods: {
-    submitInput() {
-      const d = document.getElementById("plop");
-      io.emit("chat message", {
-        user: localStorage.getItem("user"),
-        message: d.value
-      });
-      d.value = "";
-    }
+    moveUp() {
+      io.emit("move", { x: 0, y: -1 });
+    },
+    moveDown() {
+      io.emit("move", { x: 0, y: 1 });
+    },
+    moveLeft() {
+      io.emit("move", { x: -1, y: 0 });
+    },
+    moveRight() {
+      io.emit("move", { x: 1, y: 0 });
+    },
   },
   mounted() {
-    io.on("chat message", msg => {
-      const h2 = document.createElement("h2");
-      h2.innerHTML = `${msg.user} says: ${msg.message}`;
-      document.getElementById("chat").appendChild(h2);
-    });
-
     window.addEventListener("keydown", keydownHandler);
+
+    io.emit("map", {});
 
     io.on("map", world => {
       if (!this.rotDisplay) {
@@ -70,6 +69,7 @@ export default {
         rotContainer.appendChild(this.rotDisplay.getContainer());
 
         rotContainer.className = "animated fadeIn";
+        // this.rotDisplay.getContainer().style.width = '100%';
       }
 
       for (let i = 0; i < this.world.width; i++) {
@@ -95,3 +95,10 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+#rot-container {
+  display: flex;
+  justify-content: center;
+}
+</style>
