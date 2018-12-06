@@ -80,8 +80,8 @@ export default {
               }
             }
           })
-          .catch(function(error) {
-            console.error(error.response);
+          .catch((error) => {
+            this.error = error.response;
           });
       } else {
         this.error = "Password cannot be empty";

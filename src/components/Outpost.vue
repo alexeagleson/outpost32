@@ -2,12 +2,7 @@
   <div>
     <div class="row animated fadeIn">
       <div class="col-2 col-md-3 col-lg-5"></div>
-      <div class="col-8 col-md-6 col-lg-2">
-        <button v-on:click="moveUp()">UP</button>
-        <button v-on:click="moveDown()">DOWN</button>
-        <button v-on:click="moveLeft()">LEFT</button>
-        <button v-on:click="moveRight()">RIGHT</button>
-      </div>
+      <div class="col-8 col-md-6 col-lg-2"></div>
       <div class="col-2 col-md-3 col-lg-5"></div>
     </div>
     <div class="row" id="rot-container"></div>
@@ -18,17 +13,35 @@
 import { Display } from "rot-js";
 import SocketIo from "socket.io-client";
 
+const CANVAS_SIZE = 0.75;
+const ROT_FONT_SIZE = 20;
+
+const SCREEN_WIDTH = Math.floor((window.innerWidth * CANVAS_SIZE) / ROT_FONT_SIZE) * ROT_FONT_SIZE;
+const SCREEN_HEIGHT = Math.floor((window.innerHeight * CANVAS_SIZE) / ROT_FONT_SIZE) * ROT_FONT_SIZE;
+const MAIN_DISPLAY_TILE_WIDTH = Math.floor(SCREEN_WIDTH / ROT_FONT_SIZE);
+const MAIN_DISPLAY_TILE_HEIGHT = Math.floor(SCREEN_HEIGHT / ROT_FONT_SIZE);
+
+const HEX_WHITE = "#ABB2BF";
+const HEX_BLACK = "#262626";
+const HEX_RED = "#FF4C4C";
+const HEX_YELLOW = "#FFE272";
+const HEX_BLUE = "#56b6c2";
+const HEX_GREEN = "#98c379";
+const HEX_ORANGE = "#FF9900";
+const HEX_GREY = "#666666";
+const FONT_FAMILY = "dejavu sans mono, consolas, monospace";
+
 const io = SocketIo({ query: `user=${localStorage.getItem("user")}` });
 
 const keydownHandler = keyboardEvent => {
   if (keyboardEvent.key === "w") {
-    io.emit("move", { x: 0, y: -1 });
+    io.emit("move", { dx: 0, dy: -1 });
   } else if (keyboardEvent.key === "s") {
-    io.emit("move", { x: 0, y: 1 });
+    io.emit("move", { dx: 0, dy: 1 });
   } else if (keyboardEvent.key === "a") {
-    io.emit("move", { x: -1, y: 0 });
+    io.emit("move", { dx: -1, dy: 0 });
   } else if (keyboardEvent.key === "d") {
-    io.emit("move", { x: 1, y: 0 });
+    io.emit("move", { dx: 1, dy: 0 });
   }
 };
 
@@ -41,18 +54,6 @@ export default {
     };
   },
   methods: {
-    moveUp() {
-      io.emit("move", { x: 0, y: -1 });
-    },
-    moveDown() {
-      io.emit("move", { x: 0, y: 1 });
-    },
-    moveLeft() {
-      io.emit("move", { x: -1, y: 0 });
-    },
-    moveRight() {
-      io.emit("move", { x: 1, y: 0 });
-    },
   },
   mounted() {
     window.addEventListener("keydown", keydownHandler);
@@ -61,32 +62,31 @@ export default {
 
     io.on("map", world => {
       if (!this.rotDisplay) {
+          console.log(world.tileMap);
         this.world = world;
         const rotContainer = document.getElementById("rot-container");
-
-        this.rotDisplay = new Display(this.world);
-
+        this.rotDisplay = new Display({
+          width: MAIN_DISPLAY_TILE_WIDTH,
+          height: MAIN_DISPLAY_TILE_HEIGHT,
+          fg: HEX_WHITE,
+          bg: HEX_BLACK,
+          fontSize: ROT_FONT_SIZE,
+          forceSquareRatio: true,
+          fontFamily: FONT_FAMILY,
+        });
         rotContainer.appendChild(this.rotDisplay.getContainer());
-
         rotContainer.className = "animated fadeIn";
-        // this.rotDisplay.getContainer().style.width = '100%';
-      }
-
-      for (let i = 0; i < this.world.width; i++) {
-        for (let j = 0; j < this.world.height; j++) {
-          this.rotDisplay.draw(i, j, this.world.tileMap[`${i},${j}`], "gray");
-        }
       }
     });
 
-    io.on("moveOk", players => {
-      for (let i = 0; i < this.world.width; i++) {
-        for (let j = 0; j < this.world.height; j++) {
-          this.rotDisplay.draw(i, j, this.world.tileMap[`${i},${j}`], "gray");
+    io.on("moveOk", tiles => {
+      for (let i = 0; i < this.world.mapWidth; i++) {
+        for (let j = 0; j < this.world.mapHeight; j++) {
+          this.rotDisplay.draw(i, j, this.world.tileMap[`${i},${j}`].char, HEX_WHITE);
         }
       }
-      players.forEach((player) => {
-        this.rotDisplay.draw(player.x, player.y, "@", "yellow");
+      tiles.forEach((player) => {
+        this.rotDisplay.draw(player.x, player.y, "@", HEX_RED);
       });
     });
   },

@@ -8,6 +8,11 @@ const mysql = require("mysql");
 const history = require("connect-history-api-fallback");
 require("dotenv").config();
 
+const World = require('./global');
+const WorldMap = require('./constructors/WorldMap');
+const WorldObject = require('./constructors/WorldObject');
+
+
 // CORS middleware
 const allowCrossDomain = function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -84,10 +89,7 @@ class App {
           password char(60) NOT NULL,
           PRIMARY KEY (id)
         )`,
-        (a, b, c) => {
-          console.log(a);
-          console.log(b);
-          console.log(c);
+        () => {
           res.status(200).send();
         }
       );
@@ -207,37 +209,14 @@ app.use(history());
 
 // ROT JS
 
-const world = {
-  width: 50,
-  height: 30,
-  tileMap: {},
+const config = {
+  name: 'Worldland',
+  mapWidth: 70,
+  mapHeight: 30,
+  mapType: 'Cellular',
 };
 
-let players = [];
-
-const ROT = require('rot-js');
-
-const map = new ROT.Map.Cellular(world.width, world.height, {connected: true});
-
-// Cells have a 1/2 probability
-map.randomize(0.5);
-for (let i = 0; i < 5; i++) {
-  // Run a few generations
-  map.create();
-}
-map.connect(null, 1);
-
-for (let i = 0; i < world.width; i++) {
-  for (let j = 0; j < world.height; j++) {
-    const key = i + ',' + j;
-    if (map._map[i][j]) {
-      world.tileMap[key] = ".";
-    } else {
-      world.tileMap[key] = "#";
-    }
-  }
-}
-
+const map = new WorldMap(config);
 
 
 // SOCKET IO
@@ -247,28 +226,35 @@ const io = require('socket.io')(http);
 
 io.on('connection', (socket) => {
   console.log('a user connected: ' + socket.id);
-  players.push({
+
+  const newPlayer = new WorldObject({
     name: socket.handshake.query.user,
-    x: 20,
-    y: 20,
-    id: socket.id,
+    socketId: socket.id,
   });
-  console.log(players);
+
+  const emptyTile = map.getEmptyTile();
+  newPlayer.placeMe({ worldMap: map, coords: [emptyTile.x, emptyTile.y] });
+
+  newPlayer.applyMoving();
+
   
   socket.on('map', () => {
-    io.emit('map', world);
+    io.emit('map', map);
   });
 
   socket.on('move', (moveData) => {
-    const updatedPlayer = players.find(singlePlayer => singlePlayer.id === socket.id);
-    updatedPlayer.x += moveData.x;
-    updatedPlayer.y += moveData.y;
-    io.emit('moveOk', players);
+    const player = World.allObjects.find(singlePlayer => singlePlayer.socketId === socket.id);
+    if (player.Moving.moveRelative([moveData.dx, moveData.dy])) {
+      const tiles = [];
+      World.allObjects.forEach(player => tiles.push(player.getTile()));
+      io.emit('moveOk', tiles);
+      console.log('moved');
+    }
   });
 
   socket.on('disconnect', () => {
     console.log('user disconnected: ' + socket.id);
-    players = players.filter((singlePlayer) => singlePlayer.id !== socket.id);
+    World.allObjects = World.allObjects.filter((singlePlayer) => singlePlayer.socketId !== socket.id);
   });
 });
 
