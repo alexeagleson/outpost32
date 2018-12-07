@@ -7,6 +7,7 @@ class WorldObject {
   constructor(config) {
     this.id = uniqid();
     this.name = config.name;
+    this.char = '@';
     this.worldMap = null;
     this.worldTile = null;
     this.socketId = config.socketId;

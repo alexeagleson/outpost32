@@ -1,5 +1,6 @@
 const World = {
-  allObjects: []
+  allObjects: [],
+  allMaps: []
 };
 
 module.exports = World;

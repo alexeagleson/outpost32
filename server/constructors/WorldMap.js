@@ -1,7 +1,8 @@
 const uniqid = require("uniqid");
 const ROT = require("rot-js");
-const WorldTile = require("./WorldTile");
 
+const World = require('./../global');
+const WorldTile = require("./WorldTile");
 const { randBetween, displayError } = require("./../utility/utility");
 
 class WorldMap {
@@ -18,6 +19,8 @@ class WorldMap {
     this.mapType === "Cellular"
       ? this.generateCellularMap()
       : this.generateMapByType({ mapType: this.mapType });
+
+    World.allMaps.push(this);
   }
 
   getTileAt(coords) {

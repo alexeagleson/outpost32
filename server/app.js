@@ -206,23 +206,17 @@ const app = appWithDB.express;
 app.use(allowCrossDomain);
 app.use(history());
 
-
-// ROT JS
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 
 const config = {
   name: 'Worldland',
-  mapWidth: 70,
-  mapHeight: 30,
+  mapWidth: 100,
+  mapHeight: 75,
   mapType: 'Cellular',
 };
 
 const map = new WorldMap(config);
-
-
-// SOCKET IO
-
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
 
 io.on('connection', (socket) => {
   console.log('a user connected: ' + socket.id);
@@ -234,37 +228,38 @@ io.on('connection', (socket) => {
 
   const emptyTile = map.getEmptyTile();
   newPlayer.placeMe({ worldMap: map, coords: [emptyTile.x, emptyTile.y] });
-
   newPlayer.applyMoving();
-
   
   socket.on('map', () => {
     io.emit('map', map);
   });
 
   socket.on('move', (moveData) => {
-    const player = World.allObjects.find(singlePlayer => singlePlayer.socketId === socket.id);
+    const player = World.allObjects.find(worldObject => worldObject.socketId === socket.id);
     if (player.Moving.moveRelative([moveData.dx, moveData.dy])) {
-      const tiles = [];
-      World.allObjects.forEach(player => tiles.push(player.getTile()));
-      io.emit('moveOk', tiles);
-      console.log('moved');
+      const playersDrawInfo = [];
+      World.allObjects.forEach((player) => {
+        const tileInfo = player.getTile();
+        playersDrawInfo.push({
+          socketId: player.socketId,
+          x: tileInfo.x,
+          y: tileInfo.y,
+          char: player.char,
+        });
+      });
+      io.emit('moveOk', playersDrawInfo);
     }
   });
 
   socket.on('disconnect', () => {
     console.log('user disconnected: ' + socket.id);
-    World.allObjects = World.allObjects.filter((singlePlayer) => singlePlayer.socketId !== socket.id);
+    World.allObjects = World.allObjects.filter(worldObject => worldObject.socketId !== socket.id);
   });
 });
 
 http.listen(port, () => {
   console.log(`listening on ${port}`);
 });
-
-// app.listen(port, () => {
-//   console.log("App is listening on port " + port);
-// });
 
 process.on("SIGINT", () => {
   appWithDB.sql.pool.end(() => {

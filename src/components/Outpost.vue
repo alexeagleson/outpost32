@@ -13,27 +13,14 @@
 import { Display } from "rot-js";
 import SocketIo from "socket.io-client";
 
-const CANVAS_SIZE = 0.75;
-const ROT_FONT_SIZE = 20;
+import Camera from './display-utility/Camera';
+import Font from './display-utility/Font';
+import Screen from './display-utility/Screen';
 
-const SCREEN_WIDTH = Math.floor((window.innerWidth * CANVAS_SIZE) / ROT_FONT_SIZE) * ROT_FONT_SIZE;
-const SCREEN_HEIGHT = Math.floor((window.innerHeight * CANVAS_SIZE) / ROT_FONT_SIZE) * ROT_FONT_SIZE;
-const MAIN_DISPLAY_TILE_WIDTH = Math.floor(SCREEN_WIDTH / ROT_FONT_SIZE);
-const MAIN_DISPLAY_TILE_HEIGHT = Math.floor(SCREEN_HEIGHT / ROT_FONT_SIZE);
-
-const HEX_WHITE = "#ABB2BF";
-const HEX_BLACK = "#262626";
-const HEX_RED = "#FF4C4C";
-const HEX_YELLOW = "#FFE272";
-const HEX_BLUE = "#56b6c2";
-const HEX_GREEN = "#98c379";
-const HEX_ORANGE = "#FF9900";
-const HEX_GREY = "#666666";
-const FONT_FAMILY = "dejavu sans mono, consolas, monospace";
-
-const io = SocketIo({ query: `user=${localStorage.getItem("user")}` });
+let io = null;
 
 const keydownHandler = keyboardEvent => {
+  if (!io) return false;
   if (keyboardEvent.key === "w") {
     io.emit("move", { dx: 0, dy: -1 });
   } else if (keyboardEvent.key === "s") {
@@ -56,7 +43,11 @@ export default {
   methods: {
   },
   mounted() {
+
+    io = SocketIo({ query: `user=${localStorage.getItem("user")}` });
+    
     window.addEventListener("keydown", keydownHandler);
+    const camera = new Camera(Screen.MAIN_DISPLAY_TILE_WIDTH, Screen.MAIN_DISPLAY_TILE_HEIGHT);
 
     io.emit("map", {});
 
@@ -66,32 +57,50 @@ export default {
         this.world = world;
         const rotContainer = document.getElementById("rot-container");
         this.rotDisplay = new Display({
-          width: MAIN_DISPLAY_TILE_WIDTH,
-          height: MAIN_DISPLAY_TILE_HEIGHT,
-          fg: HEX_WHITE,
-          bg: HEX_BLACK,
-          fontSize: ROT_FONT_SIZE,
+          width: Screen.MAIN_DISPLAY_TILE_WIDTH,
+          height: Screen.MAIN_DISPLAY_TILE_HEIGHT,
+          fg: Font.HEX_WHITE,
+          bg: Font.HEX_BLACK,
+          fontSize: Font.FONT_SIZE,
           forceSquareRatio: true,
-          fontFamily: FONT_FAMILY,
+          fontFamily: Font.FONT_FAMILY,
         });
         rotContainer.appendChild(this.rotDisplay.getContainer());
         rotContainer.className = "animated fadeIn";
       }
     });
 
-    io.on("moveOk", tiles => {
-      for (let i = 0; i < this.world.mapWidth; i++) {
-        for (let j = 0; j < this.world.mapHeight; j++) {
-          this.rotDisplay.draw(i, j, this.world.tileMap[`${i},${j}`].char, HEX_WHITE);
+    io.on("moveOk", playersDrawInfo => {
+      const myPlayer = playersDrawInfo.find(playerInfo => playerInfo.socketId === io.id)
+
+      camera.updatePosition(myPlayer, this.world);
+      console.log(myPlayer);
+      // console.log(myPlayer.socketId)
+      console.log(io.id)
+      console.log('----');
+
+      for (let i = 0; i < Screen.MAIN_DISPLAY_TILE_WIDTH; i++) {
+        for (let j = 0; j < Screen.MAIN_DISPLAY_TILE_HEIGHT; j++) {
+          const coords = camera.screenToActual([i, j]);
+          const char = this.world.tileMap[`${coords[0]},${coords[1]}`] ? this.world.tileMap[`${coords[0]},${coords[1]}`].char : ' ';
+          this.rotDisplay.draw(i, j, char, Font.HEX_WHITE);
         }
       }
-      tiles.forEach((player) => {
-        this.rotDisplay.draw(player.x, player.y, "@", HEX_RED);
+
+      // this.drawTile = function(screenTileCoords) {
+      //   const worldTile = World.player.WorldMap.getTile(screenToActual(screenTileCoords));
+      //   this.engine.draw(screenTileCoords[0], screenTileCoords[1], worldTile.char);
+      // };
+
+      playersDrawInfo.forEach((drawInfo) => {
+        const coords = camera.actualToScreen([drawInfo.x, drawInfo.y]);
+        this.rotDisplay.draw(coords[0], coords[1], drawInfo.char, Font.HEX_RED);
       });
     });
   },
   destroyed() {
-    window.removeEventListener('keydown', keydownHandler);
+    if (io) io.close();
+    window.removeEventListener("keydown", keydownHandler);
   },
 };
 </script>
