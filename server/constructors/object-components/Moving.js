@@ -7,7 +7,7 @@ class Moving {
         const map = this.owner.getMap();
         const tile = map && map.getTileAt(coords);
         if (tile && !tile.checkBlocked()) {
-            return this.owner.placeMe({ worldMap: map, coords: coords });
+            return this.owner.place({ worldMap: map, coords: coords });
         }
         return false;
     }

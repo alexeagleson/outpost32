@@ -1,6 +1,6 @@
 const uniqid = require("uniqid");
 
-const World = require('./../global');
+const World = require('./../utility/global');
 const Moving = require('./object-components/Moving');
 
 class WorldObject {
@@ -10,17 +10,23 @@ class WorldObject {
     this.char = '@';
     this.worldMap = null;
     this.worldTile = null;
-    this.socketId = config.socketId;
 
     World.allObjects.push(this);
   }
 
-  placeMe(locationData) {
+  place(locationData) {
     const map = locationData.worldMap;
     const coords = locationData.coords;
     this.worldMap = map;
     this.worldTile = map.getTileAt(coords);
     return true;
+  }
+
+  placeRandom(locationData) {
+    const map = locationData.worldMap;
+    this.worldMap = map;
+    const emptyTile = map.getEmptyTile();
+    return this.place({ worldMap: map, coords: [emptyTile.x, emptyTile.y] });
   }
 
   getMap() {

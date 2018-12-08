@@ -1,4 +1,4 @@
-const World = require('./../global');
+const World = require('./../utility/global');
 
 class WorldTile {
   constructor(x, y, id, wall) {

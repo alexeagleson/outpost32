@@ -1,4 +1,5 @@
 const World = {
+  allPlayers: [],
   allObjects: [],
   allMaps: []
 };

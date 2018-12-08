@@ -1,7 +1,7 @@
 const uniqid = require("uniqid");
 const ROT = require("rot-js");
 
-const World = require('./../global');
+const World = require('./../utility/global');
 const WorldTile = require("./WorldTile");
 const { randBetween, displayError } = require("./../utility/utility");
 
