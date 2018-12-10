@@ -1,5 +1,4 @@
-const uniqid = require("uniqid");
-
+const uniqid = require('uniqid');
 const World = require('./../utility/global');
 const Moving = require('./object-components/Moving');
 
@@ -7,7 +6,9 @@ class WorldObject {
   constructor(config) {
     this.id = uniqid();
     this.name = config.name;
-    this.char = '@';
+    this.type = config.type;
+    this.char = config.char || '?';
+    this.colour = config.colour || 'PINK';
     this.worldMap = null;
     this.worldTile = null;
 

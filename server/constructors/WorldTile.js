@@ -10,7 +10,6 @@ class WorldTile {
   }
 
   checkBlocked() {
-    console.log(World.allObjects)
     const objectBlocking = World.allObjects.find(object => object.worldTile === this);
     if (objectBlocking) return true;
     return this.wall;
