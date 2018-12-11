@@ -1,6 +1,5 @@
 const uniqid = require('uniqid');
 const World = require('./../utility/global');
-const Moving = require('./object-components/Moving');
 
 class WorldObject {
   constructor(config) {
@@ -8,7 +7,7 @@ class WorldObject {
     this.name = config.name;
     this.type = config.type;
     this.char = config.char || '?';
-    this.colour = config.colour || 'PINK';
+    this.fgColour = config.fgColour || 'PINK';
     this.worldMap = null;
     this.worldTile = null;
 
@@ -30,16 +29,16 @@ class WorldObject {
     return this.place({ worldMap: map, coords: [emptyTile.x, emptyTile.y] });
   }
 
+  removeFromUniverse() {
+    World.allObjects = World.allObjects.filter(worldObject => worldObject !== this);
+  }
+
   getMap() {
     return this.worldMap || false;
   }
 
   getTile() {
     return this.worldTile || false;
-  }
-
-  applyMoving() {
-    this.Moving = new Moving(this);
   }
 }
 

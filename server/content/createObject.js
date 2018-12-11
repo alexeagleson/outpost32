@@ -1,4 +1,5 @@
 const WorldObject = require('./../constructors/WorldObject');
+const applyComponent = require('./applyComponent');
 const { displayError, pickRandom } = require('./../utility/utility');
 
 const createObject = (type, overwriteName) => {
@@ -9,9 +10,20 @@ const createObject = (type, overwriteName) => {
         name: overwriteName || type,
         type: type,
         char: '@',
-        colour: pickRandom(['RED', 'YELLOW', 'BLUE', 'GREEN', 'ORANGE']),
+        fgColour: pickRandom(['RED', 'YELLOW', 'BLUE', 'GREEN', 'ORANGE']),
       });
-      newObject.applyMoving();
+      applyComponent(newObject, 'Moving');
+      applyComponent(newObject, 'Destructible');
+      return newObject;
+    case 'rock':
+      newObject = new WorldObject({
+        name: overwriteName || type,
+        type: type,
+        char: 'R',
+        fgColour: 'GREEN',
+      });
+      applyComponent(newObject, 'Moving');
+      applyComponent(newObject, 'Destructible');
       return newObject;
     default:
       return displayError('No object with that type.  Make sure switch his using lowercase.', type, 'createObject');

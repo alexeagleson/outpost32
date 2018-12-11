@@ -9,6 +9,7 @@
       class="row"
       id="rot-container"
     ></div>
+    <p class="strokeme" v-if="show" v-bind:style="{ position: 'absolute', left: xPos, top: yPos }">{{ message }}</p>
   </div>
 </template>
 
@@ -38,23 +39,35 @@ const keydownHandler = keyboardEvent => {
 export default {
   data() {
     return {
-      message: 'Welcome to example component',
+      message: 'butt',
       rotDisplay: null,
       world: null,
+      xPos: '0px',
+      yPos: '0px',
+      show: false,
     };
   },
-  methods: {},
+  methods: {
+    drawAll() {
+
+    },
+  },
   mounted() {
     io = SocketIo({ query: `user=${localStorage.getItem('user')}` });
 
     window.addEventListener('keydown', keydownHandler);
-    const camera = new Camera(Screen.MAIN_DISPLAY_TILE_WIDTH, Screen.MAIN_DISPLAY_TILE_HEIGHT);
+    const camera = new Camera(Screen.MAIN_DISPLAY_TILE_WIDTH, Screen.MAIN_DISPLAY_TILE_HEIGHT, Font.FONT_SIZE);
 
     io.emit('map', {});
 
+    io.on('whatsThis', objectInfo => {
+      this.show = true;
+      this.message = objectInfo.name;
+      // alert(objectInfo.name);
+    });
+
     io.on('map', world => {
       if (!this.rotDisplay) {
-        console.log(world.tileMap);
         this.world = world;
         const rotContainer = document.getElementById('rot-container');
         this.rotDisplay = new Display({
@@ -67,19 +80,27 @@ export default {
           fontFamily: Font.FONT_FAMILY,
         });
         rotContainer.appendChild(this.rotDisplay.getContainer());
+        this.rotDisplay.getContainer().addEventListener('mousemove', e => {
+          this.xPos = e.x + 'px';
+          this.yPos = e.y + 'px';
+          this.show = false;
+          const hoverCoords = camera.screenToActual(camera.pixelToTile([e.offsetX, e.offsetY]));
+          io.emit('whatsThis', hoverCoords);
+        });
         rotContainer.className = 'animated fadeIn';
       }
     });
 
     io.on('drawThis', drawObject => {
-      this.rotDisplay.draw(drawObject.x, drawObject.y, drawObject.char, Font[drawObject.colour]);
+      const coords = camera.actualToScreen([drawObject.x, drawObject.y]);
+      this.rotDisplay.draw(coords[0], coords[1], drawObject.char, Font[drawObject.fgColour]);
+    });
+
+    io.on('updateCamera', newCameraPosition => {
+      camera.updatePosition(newCameraPosition, this.world);
     });
 
     io.on('moveOk', playersDrawInfo => {
-      const myPlayer = playersDrawInfo.find(playerInfo => playerInfo.socketId === io.id);
-
-      camera.updatePosition(myPlayer, this.world);
-
       for (let i = 0; i < Screen.MAIN_DISPLAY_TILE_WIDTH; i++) {
         for (let j = 0; j < Screen.MAIN_DISPLAY_TILE_HEIGHT; j++) {
           const coords = camera.screenToActual([i, j]);
@@ -92,7 +113,7 @@ export default {
 
       playersDrawInfo.forEach(drawInfo => {
         const coords = camera.actualToScreen([drawInfo.x, drawInfo.y]);
-        this.rotDisplay.draw(coords[0], coords[1], drawInfo.char, Font[drawInfo.colour]);
+        this.rotDisplay.draw(coords[0], coords[1], drawInfo.char, Font[drawInfo.fgColour]);
       });
     });
   },
@@ -107,5 +128,10 @@ export default {
 #rot-container {
   display: flex;
   justify-content: center;
+}
+
+.strokeme {
+  color: white;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }
 </style>

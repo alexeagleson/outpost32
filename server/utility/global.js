@@ -1,6 +1,7 @@
 const World = {
   allPlayers: [],
   allObjects: [],
+  allProjectiles: [],
   allMaps: []
 };
 

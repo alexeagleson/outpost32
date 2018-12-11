@@ -5,8 +5,11 @@ const history = require('connect-history-api-fallback');
 const World = require('./utility/global');
 const App = require('./routes');
 const Player = require('./constructors/Player');
+const Projectile = require('./constructors/Projectile');
+const Visual = require('./utility/Visual');
 const createMap = require('./content/createMap');
 const createObject = require('./content/createObject');
+const { runXTimes } = require('./utility/utility');
 
 // CORS middleware
 const allowCrossDomain = function(req, res, next) {
@@ -59,6 +62,35 @@ process.on('SIGINT', () => {
 
 const map = createMap('Test Map');
 
+runXTimes(() => {
+  const rock = createObject('Rock');
+  rock.placeRandom({ worldMap: map });
+}, 15);
+
+
+setInterval(() => {
+  const rock = createObject('Rock');
+  rock.placeRandom({ worldMap: map });
+  new Projectile({
+    projectileObject: rock,
+    destinationCoords: [20, 20],
+    speed: 200,
+  });
+}, 200);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 io.on('connection', socket => {
   console.log('Player connected: ' + socket.id);
 
@@ -66,69 +98,39 @@ io.on('connection', socket => {
   socket.player = new Player(socket.id, newPlayerObject);
   socket.player.myObject.placeRandom({ worldMap: map });
 
+  const visual = new Visual();
+
   socket.on('map', () => {
     io.emit('map', map);
+  });
+
+  socket.on('whatsThis', coords => {
+    const objectsOnTile = World.allObjects.filter(worldObject => worldObject.getTile().x === coords[0] && worldObject.getTile().y === coords[1]);
+    if (objectsOnTile.length > 0) {
+      io.to(`${socket.id}`).emit('whatsThis', visual.objectToVis(objectsOnTile[0]));
+    }
   });
 
   socket.on('move', moveData => {
     if (socket.player.myObject.Moving.moveRelative([moveData.dx, moveData.dy])) {
       const stuffToDraw = [];
-      World.allPlayers.forEach(player => {
-        const tileInfo = player.myObject.getTile();
-        stuffToDraw.push({
-          socketId: player.socketId,
-          x: tileInfo.x,
-          y: tileInfo.y,
-          char: player.myObject.char,
-          colour: player.myObject.colour,
-        });
+      World.allObjects.forEach(worldObject => {
+        stuffToDraw.push(visual.objectToVis(worldObject));
       });
 
-      let xx = 10;
-      let yy = 10;
-
-      const speed = 50;
-      const duration = 1000;
-
-      const inter = setInterval(() => {
-        const drawObject = ({
-          x: xx,
-          y: yy,
-          char: map.getTileAt([xx, yy]).char,
-          colour: 'WHITE',
-        })
-        io.emit('drawThis', drawObject);
-        xx += 1;
-        yy += 1;
-        const drawObject2 = ({
-          x: xx,
-          y: yy,
-          char: '*',
-          colour: 'GREEN',
-        })
-        io.emit('drawThis', drawObject2);
-      }, speed);
-
-      setTimeout(() => {
-        const drawObject = ({
-          x: xx,
-          y: yy,
-          char: map.getTileAt([xx, yy]).char,
-          colour: 'WHITE',
-        })
-        io.emit('drawThis', drawObject);
-        clearInterval(inter);
-      }, duration + (speed - 1))
-      
-
+      io.to(`${socket.id}`).emit('updateCamera', {
+        x: socket.player.myObject.getTile().x,
+        y: socket.player.myObject.getTile().y,
+      });
 
       io.emit('moveOk', stuffToDraw);
+
     }
   });
 
   socket.on('disconnect', () => {
     console.log('Player disconnected: ' + socket.id);
     World.allPlayers = World.allPlayers.filter(player => player.socketId !== socket.id);
-    World.allObjects = World.allObjects.filter(worldObject => worldObject !== socket.player.myObject);
+    socket.player.myObject.removeFromUniverse();
   });
 });

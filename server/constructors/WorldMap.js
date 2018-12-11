@@ -24,8 +24,11 @@ class WorldMap {
   }
 
   getTileAt(coords) {
-    // key is in form [x, y]
     return this.tileMap[`${coords[0]},${coords[1]}`];
+  }
+
+  getObjectsAt(coords) {
+    return World.allObjects.filter(worldObject => worldObject.getTile().x === coords[0] && worldObject.getTile().y === coords[1]);
   }
 
   getEmptyTile() {
