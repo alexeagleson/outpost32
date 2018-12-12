@@ -47,6 +47,12 @@ class Camera {
     this.tileX = this.computeTileCoord(newCameraPosition.x, displayScreenWidth, world.mapWidth);
     this.tileY = this.computeTileCoord(newCameraPosition.y, displayScreenHeight, world.mapHeight);
   }
+
+  withinCameraBounds(coords) {
+    if (coords[0] < 0 || coords[0] >= this.displayWidth) { return false; }
+    if (coords[1] < 0 || coords[1] >= this.displayHeight) { return false; }
+    return true;
+  }
 }
 
 export default Camera;

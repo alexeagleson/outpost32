@@ -6,6 +6,11 @@ class Destructible {
     this.condition = 100;
   }
 
+  processCollision(projectileObject, speed) {
+    if (projectileObject.Destructible) projectileObject.Destructible.adjustConditionBy(0 - speed);
+    this.adjustConditionBy(0 - speed);
+  }
+
   adjustConditionBy(value) {
     this.condition += value;
     this.condition = normalizeToValue(this.condition, 0, 100);

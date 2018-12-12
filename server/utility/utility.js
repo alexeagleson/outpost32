@@ -1,3 +1,5 @@
+const WorldObject = require('./../constructors/WorldObject');
+
 // Relative coordinates
 const NODIR_COORDS = [0, 0];
 
@@ -99,6 +101,8 @@ const directionTextToCoords = directionText => {
 
 const coordsMatch = (first, second) => first[0] === second[0] && first[1] === second[1];
 
+const isWorldObject = (arg) => arg instanceof WorldObject;
+
 module.exports = {
   rollDie,
   pickRandom,
@@ -109,4 +113,5 @@ module.exports = {
   directionTextToCoords,
   runXTimes,
   coordsMatch,
+  isWorldObject,
 };

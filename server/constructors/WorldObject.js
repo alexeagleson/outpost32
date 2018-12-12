@@ -1,5 +1,6 @@
 const uniqid = require('uniqid');
 const World = require('./../utility/global');
+const Vis = require('./../utility/Vis');
 
 class WorldObject {
   constructor(config) {
@@ -15,10 +16,19 @@ class WorldObject {
   }
 
   place(locationData) {
-    const map = locationData.worldMap;
-    const coords = locationData.coords;
-    this.worldMap = map;
-    this.worldTile = map.getTileAt(coords);
+    const newMap = locationData.worldMap;
+    const newCoords = locationData.coords;
+    const previousTile = this.getTile();
+    if (previousTile) {
+      previousTile.removeObject(this);
+      Vis.updateTile(previousTile);
+    }
+
+    const newTile = newMap.getTileAt(newCoords);
+    this.worldMap = newMap;
+    this.worldTile = newTile;
+    newTile.addObject(this);
+    Vis.updateTile(newTile);
     return true;
   }
 
@@ -31,6 +41,12 @@ class WorldObject {
 
   removeFromUniverse() {
     World.allObjects = World.allObjects.filter(worldObject => worldObject !== this);
+    const myTile = this.getTile();
+    if (myTile) {
+      myTile.removeObject(this);
+      Vis.updateTile(myTile);
+    }
+    
   }
 
   getMap() {

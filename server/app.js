@@ -6,7 +6,7 @@ const World = require('./utility/global');
 const App = require('./routes');
 const Player = require('./constructors/Player');
 const Projectile = require('./constructors/Projectile');
-const Visual = require('./utility/Visual');
+const Vis = require('./utility/vis');
 const createMap = require('./content/createMap');
 const createObject = require('./content/createObject');
 const { runXTimes } = require('./utility/utility');
@@ -46,7 +46,8 @@ app.use(allowCrossDomain);
 app.use(history());
 
 const http = require('http').Server(app);
-const io = require('socket.io')(http);
+World.io = require('socket.io')(http);
+
 const port = process.env.PORT;
 
 http.listen(port, () => {
@@ -74,57 +75,27 @@ setInterval(() => {
   new Projectile({
     projectileObject: rock,
     destinationCoords: [20, 20],
-    speed: 200,
+    speed: 100,
   });
-}, 200);
+}, 40);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-io.on('connection', socket => {
+World.io.on('connection', socket => {
   console.log('Player connected: ' + socket.id);
 
   const newPlayerObject = createObject('Player', socket.handshake.query.user);
   socket.player = new Player(socket.id, newPlayerObject);
   socket.player.myObject.placeRandom({ worldMap: map });
 
-  const visual = new Visual();
-
-  socket.on('map', () => {
-    io.emit('map', map);
-  });
-
-  socket.on('whatsThis', coords => {
-    const objectsOnTile = World.allObjects.filter(worldObject => worldObject.getTile().x === coords[0] && worldObject.getTile().y === coords[1]);
-    if (objectsOnTile.length > 0) {
-      io.to(`${socket.id}`).emit('whatsThis', visual.objectToVis(objectsOnTile[0]));
-    }
+  socket.on('sendMap', () => {
+    Vis.sendMapTo(map, socket.id);
   });
 
   socket.on('move', moveData => {
     if (socket.player.myObject.Moving.moveRelative([moveData.dx, moveData.dy])) {
-      const stuffToDraw = [];
-      World.allObjects.forEach(worldObject => {
-        stuffToDraw.push(visual.objectToVis(worldObject));
-      });
-
-      io.to(`${socket.id}`).emit('updateCamera', {
+      World.io.to(`${socket.id}`).emit('updateCamera', {
         x: socket.player.myObject.getTile().x,
         y: socket.player.myObject.getTile().y,
       });
-
-      io.emit('moveOk', stuffToDraw);
-
     }
   });
 
@@ -134,3 +105,17 @@ io.on('connection', socket => {
     socket.player.myObject.removeFromUniverse();
   });
 });
+
+
+
+
+
+
+
+
+
+
+  // socket.on('whatsThis', coords => {
+  //   const targetTile = map.getTileAt(coords);
+  //   if (targetTile.occupied()) io.to(`${socket.id}`).emit('whatsThis', vis.renderObjectInfo(targetTile.getObjectsOnTile()[0]));
+  // });

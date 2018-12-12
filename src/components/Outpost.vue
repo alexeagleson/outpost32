@@ -41,34 +41,44 @@ export default {
     return {
       message: 'butt',
       rotDisplay: null,
-      world: null,
+      worldMap: null,
       xPos: '0px',
       yPos: '0px',
       show: false,
+      camera: null,
+      readyToRender: false,
     };
   },
   methods: {
+    drawOne(coords) {
+      const screenCoords = this.camera.actualToScreen(coords);
+      if (!this.camera.withinCameraBounds(screenCoords)) return;
+      const key = `${coords[0]},${coords[1]}`;
+      this.rotDisplay.draw(screenCoords[0], screenCoords[1], this.worldMap.tileMap[key].char, Font[this.worldMap.tileMap[key].fgColour]);
+    },
     drawAll() {
-
+      for (let i = 0; i < Screen.MAIN_DISPLAY_TILE_WIDTH; i += 1) {
+        for (let j = 0; j < Screen.MAIN_DISPLAY_TILE_HEIGHT; j += 1) {
+          const actualCoords = this.camera.screenToActual([i, j]);
+          const key = `${actualCoords[0]},${actualCoords[1]}`
+          const char = this.worldMap.tileMap[key] ? this.worldMap.tileMap[key].char : ' ';
+          const fgColour = this.worldMap.tileMap[key] ? this.worldMap.tileMap[key].fgColour : Font.WHITE;
+          this.rotDisplay.draw(i, j, char, Font[fgColour]);
+        }
+      }
     },
   },
   mounted() {
     io = SocketIo({ query: `user=${localStorage.getItem('user')}` });
 
     window.addEventListener('keydown', keydownHandler);
-    const camera = new Camera(Screen.MAIN_DISPLAY_TILE_WIDTH, Screen.MAIN_DISPLAY_TILE_HEIGHT, Font.FONT_SIZE);
+    this.camera = new Camera(Screen.MAIN_DISPLAY_TILE_WIDTH, Screen.MAIN_DISPLAY_TILE_HEIGHT, Font.FONT_SIZE);
 
-    io.emit('map', {});
+    io.emit('sendMap', {});
 
-    io.on('whatsThis', objectInfo => {
-      this.show = true;
-      this.message = objectInfo.name;
-      // alert(objectInfo.name);
-    });
-
-    io.on('map', world => {
+    io.on('sendMap', worldMap => {
       if (!this.rotDisplay) {
-        this.world = world;
+        this.worldMap = worldMap;
         const rotContainer = document.getElementById('rot-container');
         this.rotDisplay = new Display({
           width: Screen.MAIN_DISPLAY_TILE_WIDTH,
@@ -84,37 +94,25 @@ export default {
           this.xPos = e.x + 'px';
           this.yPos = e.y + 'px';
           this.show = false;
-          const hoverCoords = camera.screenToActual(camera.pixelToTile([e.offsetX, e.offsetY]));
+          const hoverCoords = this.camera.screenToActual(this.camera.pixelToTile([e.offsetX, e.offsetY]));
           io.emit('whatsThis', hoverCoords);
         });
         rotContainer.className = 'animated fadeIn';
+        this.readyToRender = true;
+        this.drawAll();
       }
     });
 
-    io.on('drawThis', drawObject => {
-      const coords = camera.actualToScreen([drawObject.x, drawObject.y]);
-      this.rotDisplay.draw(coords[0], coords[1], drawObject.char, Font[drawObject.fgColour]);
+    io.on('updateTile', tileRender => {
+      if (!this.readyToRender) return;
+      this.worldMap.tileMap[`${tileRender.x},${tileRender.y}`] = tileRender;
+      this.drawOne([tileRender.x, tileRender.y]);
     });
 
     io.on('updateCamera', newCameraPosition => {
-      camera.updatePosition(newCameraPosition, this.world);
-    });
-
-    io.on('moveOk', playersDrawInfo => {
-      for (let i = 0; i < Screen.MAIN_DISPLAY_TILE_WIDTH; i++) {
-        for (let j = 0; j < Screen.MAIN_DISPLAY_TILE_HEIGHT; j++) {
-          const coords = camera.screenToActual([i, j]);
-          const char = this.world.tileMap[`${coords[0]},${coords[1]}`]
-            ? this.world.tileMap[`${coords[0]},${coords[1]}`].char
-            : ' ';
-          this.rotDisplay.draw(i, j, char, Font.WHITE);
-        }
-      }
-
-      playersDrawInfo.forEach(drawInfo => {
-        const coords = camera.actualToScreen([drawInfo.x, drawInfo.y]);
-        this.rotDisplay.draw(coords[0], coords[1], drawInfo.char, Font[drawInfo.fgColour]);
-      });
+      if (!this.readyToRender) return;
+      this.camera.updatePosition(newCameraPosition, this.worldMap);
+      this.drawAll();
     });
   },
   destroyed() {

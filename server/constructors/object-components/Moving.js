@@ -6,10 +6,12 @@ class Moving {
   move(coords) {
     const map = this.owner.getMap();
     const tile = map && map.getTileAt(coords);
-    if (tile && !tile.checkBlocked()) {
+    if (!tile) return false;
+    const checkBlocked = tile.checkBlocked();
+    if (!checkBlocked) {
       return this.owner.place({ worldMap: map, coords: coords });
     }
-    return false;
+    return checkBlocked;
   }
 
   moveRelative(relativeCoords) {

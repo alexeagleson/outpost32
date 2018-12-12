@@ -2,7 +2,8 @@ const World = {
   allPlayers: [],
   allObjects: [],
   allProjectiles: [],
-  allMaps: []
+  allMaps: [],
+  io: null,
 };
 
 module.exports = World;
