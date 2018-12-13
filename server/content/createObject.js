@@ -13,7 +13,7 @@ const createObject = (type, overwriteName) => {
         fgColour: pickRandom(['RED', 'YELLOW', 'BLUE', 'GREEN', 'ORANGE']),
       });
       applyComponent(newObject, 'Moving');
-      applyComponent(newObject, 'Destructible');
+      applyComponent(newObject, 'Destructible', { soundOnDestroy: 'male_death' });
       return newObject;
     case 'wall':
       newObject = new WorldObject({
@@ -22,7 +22,7 @@ const createObject = (type, overwriteName) => {
         char: '#',
         fgColour: 'WHITE',
       });
-      applyComponent(newObject, 'Destructible');
+      applyComponent(newObject, 'Destructible', { soundOnDestroy: 'destroy_stone' });
       return newObject;
     case 'rock':
       newObject = new WorldObject({

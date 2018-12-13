@@ -21,7 +21,7 @@
 <script>
 import SocketIo from 'socket.io-client';
 import { Display } from 'rot-js';
-import { Howl, Howler } from 'howler';
+import { Howl } from 'howler';
 import ObjectInfo from './subcomponents/ObjectInfo';
 import Camera from './display-utility/Camera';
 import Font from './display-utility/Font';
@@ -54,7 +54,11 @@ export default {
       show: false,
       camera: null,
       readyToRender: false,
-      sound: new Howl({ src: [require('./../assets/rifle_sound.ogg')] }),
+      sounds: {
+        rifle_sound: new Howl({ src: [require('./../assets/rifle_sound.ogg')] }),
+        destroy_stone: new Howl({ src: [require('./../assets/destroy_stone.ogg')] }),
+        male_death: new Howl({ src: [require('./../assets/male_death.ogg')] }),
+      },
     };
   },
   methods: {
@@ -91,7 +95,7 @@ export default {
     io.emit('sendMap', {});
 
     io.on('playSound', soundName => {
-      this.sound.play();
+      this.sounds[soundName].play();
     });
 
     io.on('tileInfo', tileInfo => {

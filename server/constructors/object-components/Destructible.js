@@ -1,9 +1,11 @@
+const Sfx = require('./../../utility/Sfx');
 const { normalizeToValue } = require('./../../utility/utility');
 
 class Destructible {
-  constructor(worldObject) {
+  constructor(worldObject, config = {}) {
     this.owner = worldObject;
     this.condition = 100;
+    this.soundOnDestroy = config.soundOnDestroy;
   }
 
   processCollision(projectileObject, speed) {
@@ -26,6 +28,7 @@ class Destructible {
   }
 
   destroy() {
+    if (this.soundOnDestroy) Sfx.playSound(this.soundOnDestroy);
     this.owner.removeFromUniverse();
   }
 }

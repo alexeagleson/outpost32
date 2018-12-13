@@ -1,5 +1,6 @@
 const Player = require('./constructors/Player');
 const Projectile = require('./constructors/Projectile');
+const Sfx = require('./utility/Sfx');
 const Vis = require('./utility/vis');
 const World = require('./utility/global');
 const { runXTimes } = require('./utility/utility');
@@ -45,7 +46,7 @@ World.io.on('connection', socket => {
       destinationCoords: tile.getCoords(),
       speed: 100,
     });
-    World.io.to(`${socket.id}`).emit('playSound', 'rifle_sound.ogg');
+    Sfx.playSound('rifle_sound');
   });
 
   socket.on('sendMap', () => {

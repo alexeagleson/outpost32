@@ -1,6 +1,7 @@
 class Moving {
-  constructor(worldObject) {
+  constructor(worldObject, config = {}) {
     this.owner = worldObject;
+    config;
   }
 
   move(coords) {
