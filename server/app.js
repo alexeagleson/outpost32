@@ -1,15 +1,8 @@
 require('dotenv').config();
 
 const history = require('connect-history-api-fallback');
-
-const World = require('./utility/global');
 const App = require('./routes');
-const Player = require('./constructors/Player');
-const Projectile = require('./constructors/Projectile');
-const Vis = require('./utility/vis');
-const createMap = require('./content/createMap');
-const createObject = require('./content/createObject');
-const { runXTimes } = require('./utility/utility');
+const World = require('./utility/global');
 
 // CORS middleware
 const allowCrossDomain = function(req, res, next) {
@@ -61,50 +54,7 @@ process.on('SIGINT', () => {
   });
 });
 
-const map = createMap('Test Map');
-
-runXTimes(() => {
-  const rock = createObject('Rock');
-  rock.placeRandom({ worldMap: map });
-}, 15);
-
-
-setInterval(() => {
-  const rock = createObject('Rock');
-  rock.placeRandom({ worldMap: map });
-  new Projectile({
-    projectileObject: rock,
-    destinationCoords: [20, 20],
-    speed: 100,
-  });
-}, 40);
-
-World.io.on('connection', socket => {
-  console.log('Player connected: ' + socket.id);
-
-  const newPlayerObject = createObject('Player', socket.handshake.query.user);
-  socket.player = new Player(socket.id, newPlayerObject);
-  socket.player.myObject.placeRandom({ worldMap: map });
-
-  socket.on('sendMap', () => {
-    Vis.sendMapTo(map, socket.id);
-  });
-
-  socket.on('move', moveData => {
-    if (socket.player.myObject.Moving.moveRelative([moveData.dx, moveData.dy])) {
-      World.io.to(`${socket.id}`).emit('updateCamera', {
-        x: socket.player.myObject.getTile().x,
-        y: socket.player.myObject.getTile().y,
-      });
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Player disconnected: ' + socket.id);
-    World.allPlayers = World.allPlayers.filter(player => player.socketId !== socket.id);
-    socket.player.myObject.removeFromUniverse();
-  });
-});
+require('./game');
 
 
 
@@ -114,8 +64,3 @@ World.io.on('connection', socket => {
 
 
 
-
-  // socket.on('whatsThis', coords => {
-  //   const targetTile = map.getTileAt(coords);
-  //   if (targetTile.occupied()) io.to(`${socket.id}`).emit('whatsThis', vis.renderObjectInfo(targetTile.getObjectsOnTile()[0]));
-  // });

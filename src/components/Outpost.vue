@@ -8,15 +8,21 @@
     <div
       class="row"
       id="rot-container"
+      oncontextmenu="return false;"
     ></div>
-    <p class="strokeme" v-if="show" v-bind:style="{ position: 'absolute', left: xPos, top: yPos }">{{ message }}</p>
+    <ObjectInfo
+      v-if="show"
+      v-bind:style="{ position: 'absolute', left: xPos, top: yPos }"
+      v-bind:name="message"
+    />
   </div>
 </template>
 
 <script>
-import { Display } from 'rot-js';
 import SocketIo from 'socket.io-client';
-
+import { Display } from 'rot-js';
+import { Howl, Howler } from 'howler';
+import ObjectInfo from './subcomponents/ObjectInfo';
 import Camera from './display-utility/Camera';
 import Font from './display-utility/Font';
 import Screen from './display-utility/Screen';
@@ -40,6 +46,7 @@ export default {
   data() {
     return {
       message: 'butt',
+      condition: null,
       rotDisplay: null,
       worldMap: null,
       xPos: '0px',
@@ -47,6 +54,7 @@ export default {
       show: false,
       camera: null,
       readyToRender: false,
+      sound: new Howl({ src: [require('./../assets/rifle_sound.ogg')] }),
     };
   },
   methods: {
@@ -54,13 +62,18 @@ export default {
       const screenCoords = this.camera.actualToScreen(coords);
       if (!this.camera.withinCameraBounds(screenCoords)) return;
       const key = `${coords[0]},${coords[1]}`;
-      this.rotDisplay.draw(screenCoords[0], screenCoords[1], this.worldMap.tileMap[key].char, Font[this.worldMap.tileMap[key].fgColour]);
+      this.rotDisplay.draw(
+        screenCoords[0],
+        screenCoords[1],
+        this.worldMap.tileMap[key].char,
+        Font[this.worldMap.tileMap[key].fgColour]
+      );
     },
     drawAll() {
       for (let i = 0; i < Screen.MAIN_DISPLAY_TILE_WIDTH; i += 1) {
         for (let j = 0; j < Screen.MAIN_DISPLAY_TILE_HEIGHT; j += 1) {
           const actualCoords = this.camera.screenToActual([i, j]);
-          const key = `${actualCoords[0]},${actualCoords[1]}`
+          const key = `${actualCoords[0]},${actualCoords[1]}`;
           const char = this.worldMap.tileMap[key] ? this.worldMap.tileMap[key].char : ' ';
           const fgColour = this.worldMap.tileMap[key] ? this.worldMap.tileMap[key].fgColour : Font.WHITE;
           this.rotDisplay.draw(i, j, char, Font[fgColour]);
@@ -72,9 +85,20 @@ export default {
     io = SocketIo({ query: `user=${localStorage.getItem('user')}` });
 
     window.addEventListener('keydown', keydownHandler);
+
     this.camera = new Camera(Screen.MAIN_DISPLAY_TILE_WIDTH, Screen.MAIN_DISPLAY_TILE_HEIGHT, Font.FONT_SIZE);
 
     io.emit('sendMap', {});
+
+    io.on('playSound', soundName => {
+      this.sound.play();
+    });
+
+    io.on('tileInfo', tileInfo => {
+      this.message = tileInfo.name;
+      this.condition = tileInfo.condition;
+      this.show = true;
+    });
 
     io.on('sendMap', worldMap => {
       if (!this.rotDisplay) {
@@ -90,13 +114,22 @@ export default {
           fontFamily: Font.FONT_FAMILY,
         });
         rotContainer.appendChild(this.rotDisplay.getContainer());
+
         this.rotDisplay.getContainer().addEventListener('mousemove', e => {
           this.xPos = e.x + 'px';
           this.yPos = e.y + 'px';
           this.show = false;
           const hoverCoords = this.camera.screenToActual(this.camera.pixelToTile([e.offsetX, e.offsetY]));
-          io.emit('whatsThis', hoverCoords);
+          io.emit('tileInfo', hoverCoords);
         });
+
+        this.rotDisplay.getContainer().addEventListener('mousedown', e => {
+          this.xPos = e.x + 'px';
+          this.yPos = e.y + 'px';
+          const clickCoords = this.camera.screenToActual(this.camera.pixelToTile([e.offsetX, e.offsetY]));
+          io.emit('rightClickTile', clickCoords);
+        });
+
         rotContainer.className = 'animated fadeIn';
         this.readyToRender = true;
         this.drawAll();
@@ -114,12 +147,20 @@ export default {
       this.camera.updatePosition(newCameraPosition, this.worldMap);
       this.drawAll();
     });
+
+    io.on('message', messageObject => {
+      alert(messageObject.message);
+    });
   },
   destroyed() {
     if (io) io.close();
     window.removeEventListener('keydown', keydownHandler);
   },
+  components: {
+    ObjectInfo,
+  },
 };
+
 </script>
 
 <style scoped>
@@ -127,9 +168,9 @@ export default {
   display: flex;
   justify-content: center;
 }
-
-.strokeme {
-  color: white;
-  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-}
 </style>
+
+
+
+
+ 

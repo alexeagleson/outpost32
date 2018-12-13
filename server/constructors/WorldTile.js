@@ -1,19 +1,22 @@
 const World = require('./../utility/global');
 
 class WorldTile {
-  constructor(x, y, id, wall, fgColour, bgColour) {
+  constructor(x, y, worldMap, fgColour, bgColour) {
     this.x = x;
     this.y = y;
-    this.mapId = id;
-    this.wall = wall;
-    this.char = null;
+    this.char = '.';
     this.fgColour = fgColour || 'WHITE';
     this.bgColour = bgColour || 'BLACK';
+    this._worldMap = worldMap;
     this._objectsOnTile = [];
   }
 
   getCoords() {
     return [this.x, this.y];
+  }
+
+  getMap() {
+    return this._worldMap;
   }
 
   getObjectsOnTile() {
@@ -35,7 +38,7 @@ class WorldTile {
   checkBlocked() {
     const objectBlocking = World.allObjects.find(object => object.getTile() === this);
     if (objectBlocking) return objectBlocking;
-    return this.wall;
+    return false;
   }
 
 

@@ -1,5 +1,12 @@
 const World = require('./global');
 
+const generateObjectTooltip = worldObject => {
+  return {
+    name: worldObject.name,
+    condition: worldObject.Destructible && worldObject.Destructible.condition,
+  };
+};
+
 const generateTileRender = worldTile => {
   const tileRender = {
     char: worldTile.char,
@@ -25,11 +32,7 @@ const generateMapRender = worldMap => {
   for (let i = 0; i < worldMap.mapWidth; i += 1) {
     for (let j = 0; j < worldMap.mapHeight; j += 1) {
       const key = `${i},${j}`;
-      mapRender.tileMap[key] = {
-        char: worldMap.tileMap[key].char,
-        fgColour: worldMap.tileMap[key].fgColour,
-        bgColour: worldMap.tileMap[key].bgColour,
-      };
+      mapRender.tileMap[key] = generateTileRender(worldMap.tileMap[key]);
     }
   }
   return mapRender;
@@ -42,6 +45,13 @@ const Vis = {
 
   updateTile: worldTile => {
     World.io.emit('updateTile', generateTileRender(worldTile));
+  },
+
+  sendTileInfoTo(worldTile, socketId) {
+    if (worldTile.occupied()) {
+      const objectOnTile = worldTile.getObjectsOnTile()[0];
+      World.io.to(`${socketId}`).emit('tileInfo', generateObjectTooltip(objectOnTile));
+    }
   },
 };
 

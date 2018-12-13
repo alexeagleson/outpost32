@@ -8,7 +8,7 @@ const createMap = name => {
         name,
         mapWidth: 80,
         mapHeight: 60,
-        mapType: 'Cellular',
+        mapType: 'Arena',
       });
     default:
       return displayError('No map with that name.  Make sure switch his using lowercase.', name, 'createMap');

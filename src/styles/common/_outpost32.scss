@@ -1,0 +1,9 @@
+.objectInfoTooltip {
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  background-color: $BLACK;
+  border: 2px solid $BLUE;
+  border-radius: 5px;
+}

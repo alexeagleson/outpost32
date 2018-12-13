@@ -15,6 +15,15 @@ const createObject = (type, overwriteName) => {
       applyComponent(newObject, 'Moving');
       applyComponent(newObject, 'Destructible');
       return newObject;
+    case 'wall':
+      newObject = new WorldObject({
+        name: overwriteName || type,
+        type: type,
+        char: '#',
+        fgColour: 'WHITE',
+      });
+      applyComponent(newObject, 'Destructible');
+      return newObject;
     case 'rock':
       newObject = new WorldObject({
         name: overwriteName || type,
