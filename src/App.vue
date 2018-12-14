@@ -18,7 +18,7 @@ export default {
   },
   methods: {
     loggedIn() {
-      return !!localStorage.getItem("outpostJwt");
+      return !!localStorage.getItem("userJwt");
     },
     routeName(name) {
       return this.$route.name === name;

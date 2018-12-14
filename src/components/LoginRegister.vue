@@ -26,6 +26,12 @@
             required
           >
         </div>
+        <div v-if="formType.toLowerCase()==='register'">
+          <input
+            type="checkbox"
+            v-model="admin"
+          ><small>  Create as Admin</small>
+        </div>
         <small
           v-if="error"
           class="form-text text-muted"
@@ -47,9 +53,10 @@ export default {
   props: ['formType'],
   data() {
     return {
-      username: "",
-      password: "",
-      error: ""
+      username: '',
+      password: '',
+      admin: '',
+      error: '',
     };
   },
   methods: {
@@ -59,7 +66,8 @@ export default {
         this.$http
           .post(`/${this.formType}`, {
             username: this.username,
-            password: this.password
+            password: this.password,
+            admin: this.admin,
           })
           .then(response => {
             if (response.data.error) {
@@ -67,33 +75,34 @@ export default {
               return;
             }
 
-            this.error = "";
-            localStorage.setItem("user", response.data.username);
-            localStorage.setItem("outpostJwt", response.data.token);
+            this.error = '';
+            localStorage.setItem('user', response.data.username);
+            localStorage.setItem('userAdmin', !!response.data.admin);
+            localStorage.setItem('userJwt', response.data.token);
 
-            if (localStorage.getItem("outpostJwt") != null) {
-              this.$emit("loggedIn");
+            if (localStorage.getItem('userJwt') != null) {
+              this.$emit('loggedIn');
               if (this.$route.params.nextUrl != null) {
                 this.$router.push(this.$route.params.nextUrl);
               } else {
-                this.$router.push("/intro");
+                this.$router.push('/intro');
               }
             }
           })
-          .catch((error) => {
+          .catch(error => {
             this.error = error.response;
           });
       } else {
-        this.error = "Password cannot be empty";
+        this.error = 'Password cannot be empty';
         return;
       }
-    }
+    },
   },
   computed: {
     uppercaseRouteName() {
-      return this.formType.charAt(0).toUpperCase() + this.formType.slice(1)
-    }
-  }
+      return this.formType.charAt(0).toUpperCase() + this.formType.slice(1);
+    },
+  },
 };
 </script>
 

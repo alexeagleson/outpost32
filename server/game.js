@@ -1,7 +1,7 @@
 const Player = require('./constructors/Player');
 const Projectile = require('./constructors/Projectile');
 const Sfx = require('./utility/Sfx');
-const Vis = require('./utility/vis');
+const Vis = require('./utility/Vis');
 const World = require('./utility/global');
 const { runXTimes } = require('./utility/utility');
 const createMap = require('./content/createMap');

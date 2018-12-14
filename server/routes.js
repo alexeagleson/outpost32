@@ -32,6 +32,7 @@ class User {
   }
 }
 
+
 const validateUsername = (textValue, formName, min = null, max = null) => {
   if (!(typeof textValue === 'string')) return `${formName} must be text.`
   if (textValue.length === 0) return `${formName} cannot be empty.`
@@ -64,6 +65,7 @@ class App {
       this.sql.pool.query(
         `CREATE TABLE IF NOT EXISTS users (
             id varchar(18) NOT NULL,
+            admin TINYINT(1) NOT NULL,
             username varchar(100) NOT NULL,
             password char(60) NOT NULL,
             PRIMARY KEY (id)
@@ -81,7 +83,7 @@ class App {
       }
 
       this.sql.pool.query(
-        `SELECT username, password FROM users WHERE username = ?`,
+        `SELECT username, admin, password FROM users WHERE username = ?`,
         [req.body.username],
         (error, passwordResult) => {
           if (passwordResult && passwordResult.length > 0) {
@@ -91,6 +93,7 @@ class App {
                 currentUser.generateAuthToken(secret)
                 res.header('x-auth', currentUser.token).send({
                   username: passwordResult[0].username,
+                  admin: passwordResult[0].admin,
                   token: currentUser.token,
                 })
               } else {
@@ -120,15 +123,17 @@ class App {
               error: 'Username already registered.',
             })
           } else {
+            const adminBit = req.body.admin ? 1: 0;
             bcrypt.hash(req.body.password, saltRounds).then(hash => {
               this.sql.pool.query(
-                `INSERT INTO users (id, username, password) VALUES (?, ?, ?)`,
-                [uniqid(), req.body.username, hash],
+                `INSERT INTO users (id, admin, username, password) VALUES (?, ?, ?, ?)`,
+                [uniqid(), adminBit, req.body.username, hash],
                 () => {
                   const currentUser = new User(req.body.username)
                   currentUser.generateAuthToken(secret)
                   res.header('x-auth', currentUser.token).send({
                     username: req.body.username,
+                    admin: adminBit,
                     token: currentUser.token,
                   })
                 }

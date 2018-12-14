@@ -14,6 +14,7 @@
       v-if="show"
       v-bind:style="{ position: 'absolute', left: xPos, top: yPos }"
       v-bind:name="message"
+      v-bind:condition="condition"
     />
   </div>
 </template>
