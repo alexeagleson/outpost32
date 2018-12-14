@@ -4,8 +4,8 @@ const { normalizeToValue } = require('./../../utility/utility');
 class Destructible {
   constructor(worldObject, config = {}) {
     this.owner = worldObject;
-    this.condition = 100;
-    this.soundOnDestroy = config.soundOnDestroy;
+    this.condition = config.condition || 100;
+    this.soundOnDestroy = config.soundOnDestroy || null;
   }
 
   processCollision(projectileObject, speed) {

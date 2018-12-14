@@ -3,27 +3,11 @@ const Projectile = require('./constructors/Projectile');
 const Sfx = require('./utility/Sfx');
 const Vis = require('./utility/Vis');
 const World = require('./utility/global');
-const { runXTimes } = require('./utility/utility');
+// const { runXTimes } = require('./utility/utility');
 const createMap = require('./content/createMap');
 const createObject = require('./content/createObject');
 
 const map = createMap('Test Map');
-
-runXTimes(() => {
-  const rock = createObject('Rock');
-  rock.placeRandom({ worldMap: map });
-}, 15);
-
-
-setInterval(() => {
-  const rock = createObject('Rock');
-  rock.placeRandom({ worldMap: map });
-  new Projectile({
-    projectileObject: rock,
-    destinationCoords: [20, 20],
-    speed: 90,
-  });
-}, 100);
 
 World.io.on('connection', socket => {
   console.log('Player connected: ' + socket.id);
@@ -32,6 +16,14 @@ World.io.on('connection', socket => {
   socket.player = new Player(socket.id, newPlayerObject);
   socket.player.myObject.placeRandom({ worldMap: map });
 
+  socket.use((incomingSocket, next) => {
+    if (socket.player && socket.player.myObject && socket.player.myObject.Destructible.condition <= 0) {
+      World.io.to(socket.id).emit('gameOver', 'YOU ARE DEAD');
+      return;
+    }
+    next();
+  });
+
   socket.on('tileInfo', coords => {
     const tile = map.getTileAt(coords);
     if (tile) Vis.sendTileInfoTo(tile, socket.id);
@@ -39,12 +31,13 @@ World.io.on('connection', socket => {
 
   socket.on('rightClickTile', coords => {
     const tile = map.getTileAt(coords);
-    const rock = createObject('Rock');
-    rock.place({ worldMap: map, coords: socket.player.myObject.getTile().getCoords() });
+    const bullet = createObject('Bullet');
+    bullet.place({ worldMap: map, coords: socket.player.myObject.getTile().getCoords() });
     new Projectile({
-      projectileObject: rock,
+      projectileObject: bullet,
+      launchObject: socket.player.myObject,
       destinationCoords: tile.getCoords(),
-      speed: 100,
+      speed: 50,
     });
     Sfx.playSound('rifle_sound');
   });
@@ -54,10 +47,6 @@ World.io.on('connection', socket => {
   });
 
   socket.on('move', moveData => {
-    if (socket.player.myObject.Destructible.condition <= 0) {
-      World.io.to(`${socket.id}`).emit('message', { message: 'You dead' });
-      return;
-    }
     if (socket.player.myObject.Moving.moveRelative([moveData.dx, moveData.dy])) {
       World.io.to(`${socket.id}`).emit('updateCamera', {
         x: socket.player.myObject.getTile().x,

@@ -5,11 +5,13 @@
       <div class="col-8 col-md-6 col-lg-2"></div>
       <div class="col-2 col-md-3 col-lg-5"></div>
     </div>
+    <Debug v-bind:debugText="debugText" />
     <div
       class="row"
       id="rot-container"
       oncontextmenu="return false;"
     ></div>
+    <button v-on:click="respawn()">RESPAWN</button>
     <ObjectInfo
       v-if="show"
       v-bind:style="{ position: 'absolute', left: xPos, top: yPos }"
@@ -23,6 +25,7 @@
 import SocketIo from 'socket.io-client';
 import { Display } from 'rot-js';
 import { Howl } from 'howler';
+import Debug from './subcomponents/Debug';
 import ObjectInfo from './subcomponents/ObjectInfo';
 import Camera from './display-utility/Camera';
 import Font from './display-utility/Font';
@@ -55,14 +58,19 @@ export default {
       show: false,
       camera: null,
       readyToRender: false,
+      debugObject: {},
+      debugText: 'none',
       sounds: {
-        rifle_sound: new Howl({ src: [require('./../assets/rifle_sound.ogg')] }),
+        rifle_sound: new Howl({ src: [require('./../assets/rifle_sound.ogg')], volume: 0.25 }),
         destroy_stone: new Howl({ src: [require('./../assets/destroy_stone.ogg')] }),
         male_death: new Howl({ src: [require('./../assets/male_death.ogg')] }),
       },
     };
   },
   methods: {
+    respawn() {
+      this.$router.go();
+    },
     drawOne(coords) {
       const screenCoords = this.camera.actualToScreen(coords);
       if (!this.camera.withinCameraBounds(screenCoords)) return;
@@ -95,6 +103,15 @@ export default {
 
     io.emit('sendMap', {});
 
+    io.on('debug', debugObject => {
+      Object.assign(this.debugObject, debugObject);
+      this.debugText = JSON.stringify(this.debugObject);
+    });
+
+    io.on('gameOver', gameOverMessage => {
+      this.debugText = gameOverMessage;
+    });
+
     io.on('playSound', soundName => {
       this.sounds[soundName].play();
     });
@@ -120,19 +137,16 @@ export default {
         });
         rotContainer.appendChild(this.rotDisplay.getContainer());
 
-        this.rotDisplay.getContainer().addEventListener('mousemove', e => {
-          this.xPos = e.x + 'px';
-          this.yPos = e.y + 'px';
-          this.show = false;
-          const hoverCoords = this.camera.screenToActual(this.camera.pixelToTile([e.offsetX, e.offsetY]));
-          io.emit('tileInfo', hoverCoords);
-        });
-
         this.rotDisplay.getContainer().addEventListener('mousedown', e => {
           this.xPos = e.x + 'px';
           this.yPos = e.y + 'px';
+          this.show = false;
           const clickCoords = this.camera.screenToActual(this.camera.pixelToTile([e.offsetX, e.offsetY]));
-          io.emit('rightClickTile', clickCoords);
+          if (e.button === 0) {
+            io.emit('tileInfo', clickCoords);
+          } else if (e.button === 2) {
+            io.emit('rightClickTile', clickCoords);
+          }          
         });
 
         rotContainer.className = 'animated fadeIn';
@@ -162,6 +176,7 @@ export default {
     window.removeEventListener('keydown', keydownHandler);
   },
   components: {
+    Debug,
     ObjectInfo,
   },
 };

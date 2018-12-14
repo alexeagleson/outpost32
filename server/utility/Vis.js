@@ -39,6 +39,10 @@ const generateMapRender = worldMap => {
 };
 
 const Vis = {
+  debug: (debugObject) => {
+    World.io.emit('debug', debugObject);
+  },
+
   sendMapTo: (worldMap, socketId) => {
     World.io.to(socketId).emit('sendMap', generateMapRender(worldMap));
   },

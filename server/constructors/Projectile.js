@@ -5,6 +5,7 @@ class Projectile {
   constructor(config) {
     config.projectileObject.Projectile = this;
     this.myObject = config.projectileObject;
+    this.launchObject = config.launchObject;
     this.destinationCoords = config.destinationCoords;
     this.speed = config.speed;
     this.interval = setInterval(() => {
@@ -24,7 +25,7 @@ class Projectile {
 
     if (moveResult === true) return;
 
-    if (isWorldObject(moveResult) && moveResult.Destructible) {
+    if (isWorldObject(moveResult) && moveResult.Destructible && moveResult !== this.launchObject) {
       moveResult.Destructible.processCollision(this.myObject, this.speed);
 
     }

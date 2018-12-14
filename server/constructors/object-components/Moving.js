@@ -19,7 +19,7 @@ class Moving {
     const tile = this.owner.getTile();
     const newX = tile ? tile.x + relativeCoords[0] : null;
     const newY = tile ? tile.y + relativeCoords[1] : null;
-    if (tile && newX && newX) return this.move([newX, newY]);
+    if (tile && newX >= 0 && newX >= 0) return this.move([newX, newY]);
     return false;
   }
 }

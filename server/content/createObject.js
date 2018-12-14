@@ -34,6 +34,16 @@ const createObject = (type, overwriteName) => {
       applyComponent(newObject, 'Moving');
       applyComponent(newObject, 'Destructible');
       return newObject;
+    case 'bullet':
+      newObject = new WorldObject({
+        name: overwriteName || type,
+        type: type,
+        char: 'o',
+        fgColour: 'BLUE',
+      });
+      applyComponent(newObject, 'Moving');
+      applyComponent(newObject, 'Destructible', { condition: 1 });
+      return newObject;
     default:
       return displayError('No object with that type.  Make sure switch his using lowercase.', type, 'createObject');
   }

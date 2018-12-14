@@ -17,13 +17,7 @@ export default {
 </script>
 
 <style scoped>
-.strokeme {
-  color: white;
-  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-}
-
 .animation-parameters {
-  animation-duration: 0.5s;
-  /* animation-delay: 0.1s; */
+  animation-duration: 0.75s;
 }
 </style>
