@@ -4,6 +4,7 @@
       <router-link v-bind:class="{ bold: routeName('login') }" v-if="!loggedIn()" to="/">Login</router-link>
       <router-link v-bind:class="{ bold: routeName('register') }" v-if="!loggedIn()" to="/register"> | Register</router-link>
       <router-link v-bind:class="{ bold: routeName('outpost') }" v-if="loggedIn()" to="/outpost">Outpost</router-link>
+      <router-link v-bind:class="{ bold: routeName('admin') }" v-if="loggedIn()" to="/admin">Admin</router-link>
       <router-link v-if="loggedIn()" to="/logout"> | Logout</router-link>
     </h5>
     <router-view/>
