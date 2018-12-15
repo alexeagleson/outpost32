@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import Router from 'vue-router';
+import Axios from 'axios';
 import Admin from '@/components/Admin';
 import LoginRegister from '@/components/LoginRegister';
 import Logout from '@/components/Logout';
@@ -66,16 +67,43 @@ router.beforeEach((to, from, next) => {
         params: { nextUrl: to.fullPath },
       });
     } else {
-      next();
+      Axios.get(`/verifyuser`, {
+        params: {
+          username: localStorage.getItem('user'),
+          admin: localStorage.getItem('userAdmin'),
+        },
+      })
+        .then(() => {
+          next();
+        })
+        .catch(() => {
+          next({
+            path: '/intro',
+            params: { nextUrl: to.fullPath },
+          });
+        });
     }
-  } else if (to.matched.some(record => record.meta.requiresAuth)) {
+  } else if (to.matched.some(record => record.meta.requiresUser)) {
     if (localStorage.getItem('userJwt') === null) {
       next({
         path: '/',
         params: { nextUrl: to.fullPath },
       });
     } else {
-      next();
+      Axios.get(`/verifyuser`, {
+        params: {
+          username: localStorage.getItem('user'),
+        },
+      })
+        .then(() => {
+          next();
+        })
+        .catch(() => {
+          next({
+            path: '/logout',
+            params: { nextUrl: to.fullPath },
+          });
+        });
     }
   } else {
     next();

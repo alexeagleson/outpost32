@@ -6,6 +6,7 @@
 export default {
   mounted() {
     localStorage.removeItem("user");
+    localStorage.removeItem("userAdmin");
     localStorage.removeItem("userJwt");
     this.$router.push("/");
   }
